@@ -1,54 +1,85 @@
-// Cursor Glow Effect
-document.addEventListener('mousemove', (e) => {
-    const glow = document.querySelector('.cursor-glow');
-    glow.style.left = e.clientX + 'px';
-    glow.style.top = e.clientY + 'px';
-});
+```
+const avatar = document.querySelector('.avatar-wrapper');
+const speechBubble = document.getElementById('speech-bubble');
 
-// Scroll Reveal Animation
-const observerOptions = {
-    threshold: 0.1
-};
+// Physics state
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+let avatarX = window.innerWidth / 2;
+let avatarY = window.innerHeight / 2;
 
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
-        }
-    });
-}, observerOptions);
+// Smooth follow config
+const delay = 0.08; // Lower = faster follow
 
-document.querySelectorAll('.section, .project-card').forEach(el => {
-    el.classList.add('hidden');
-    observer.observe(el);
-});
+// Idle animation state
+let time = 0;
 
-// Add CSS for reveal animation
-const style = document.createElement('style');
-style.innerHTML = `
-    .hidden {
-        opacity: 0;
-        transform: translateY(30px);
-        transition: all 0.8s ease-out;
+function animate() {
+    // Calculate distance to target
+    const distX = mouseX - avatarX;
+    const distY = mouseY - avatarY;
+    
+    // Smoothly move towards mouse
+    avatarX += distX * delay;
+    avatarY += distY * delay;
+    
+    // Add idle "bobbing" (dancing)
+    time += 0.05;
+    const bobY = Math.sin(time) * 10; // Up and down
+    const bobX = Math.cos(time * 0.5) * 5; // Side to side
+    
+    // Apply transform
+    // We offset by 100px (half of width/height) to center it
+    avatar.style.transform = `translate(${ avatarX - 100 + bobX}px, ${ avatarY - 100 + bobY}px)`;
+    
+    // Move speech bubble with it
+    if(speechBubble) {
+        speechBubble.style.left = `${ avatarX + 60 } px`;
+        speechBubble.style.top = `${ avatarY - 80 + bobY } px`;
     }
-    .visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-`;
-document.head.appendChild(style);
-
-// Glitch Text Effect (Simple)
-const glitchText = document.querySelector('.glitch');
-if (glitchText) {
-    setInterval(() => {
-        glitchText.style.textShadow = `
-            ${Math.random() * 4 - 2}px ${Math.random() * 4 - 2}px 0 #00f2ff,
-            ${Math.random() * 4 - 2}px ${Math.random() * 4 - 2}px 0 #bd00ff
-        `;
-        setTimeout(() => {
-            glitchText.style.textShadow = 'none';
-        }, 100);
-    }, 3000);
+    
+    requestAnimationFrame(animate);
 }
+
+// Track mouse
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+// Speech Bubble Interaction
+const phrases = [
+    "Yo! 👋",
+    "Nice Click! 🎾",
+    "Munich Vibes 🥨",
+    "Anti-Drone Mode 🛡️",
+    "Let's Code! 💻"
+];
+
+document.addEventListener('click', () => {
+    if(speechBubble) {
+        // Pick random phrase
+        const text = phrases[Math.floor(Math.random() * phrases.length)];
+        speechBubble.textContent = text;
+        
+        // Show bubble
+        speechBubble.style.opacity = 1;
+        
+        // Spin avatar
+        avatar.style.transition = 'transform 0.5s ease';
+        avatar.style.transform += ' rotate(360deg)';
+        
+        // Hide after 2s
+        setTimeout(() => {
+            speechBubble.style.opacity = 0;
+            // Reset transition for physics loop
+            setTimeout(() => {
+                avatar.style.transition = 'transform 0.1s linear';
+            }, 500);
+        }, 2000);
+    }
+});
+
+// Start loop
+animate();
+```
